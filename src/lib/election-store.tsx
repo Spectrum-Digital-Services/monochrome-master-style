@@ -277,6 +277,7 @@ type Store = {
 const Ctx = createContext<Store | null>(null);
 
 export function ElectionProvider({ children }: { children: ReactNode }) {
+  const [hydrated, setHydrated] = useState(false);
   const [contests, setContests] = useState<Contest[]>(seedContests);
   const [voters, setVoters] = useState<Voter[]>(seedVoters);
   const [ballots, setBallots] = useState<Ballot[]>(() => {
@@ -316,6 +317,10 @@ export function ElectionProvider({ children }: { children: ReactNode }) {
   const [highlightHash, setHighlightHash] = useState<string | null>(null);
   const [simulating, setSimulating] = useState(false);
   const [publicStandings, setPublicStandings] = useState(true);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   // Mark seeded ballots' voters as voted
   const seeded = useRef(false);
@@ -460,6 +465,8 @@ export function ElectionProvider({ children }: { children: ReactNode }) {
     resetCeremony: () => setTrustees((ts) => ts.map(({ signature: _signature, ...t }) => ({ ...t, signed: false }))),
     stats,
   };
+
+  if (!hydrated) return null;
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
