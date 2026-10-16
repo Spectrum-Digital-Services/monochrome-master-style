@@ -436,7 +436,7 @@ function ReceiptTab() {
       </div>
       <div className="divide-y divide-hairline rounded-2xl bg-surface text-sm">
         {[
-          ["Timestamp", new Date(b.ts).toLocaleString()],
+          ["Timestamp", new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(b.ts)],
           ["Channel", b.channel],
           ["Weight", `${b.weight.toFixed(1)}x`],
           ["Board counter-signature", `ecdsa:${b.signature.slice(0, 14)}…`],

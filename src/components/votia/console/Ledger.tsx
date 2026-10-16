@@ -89,7 +89,7 @@ export function Ledger() {
                 const hl = b.hash === highlightHash;
                 return (
                   <tr key={b.id} ref={hl ? hlRef : undefined} className={`animate-row-in border-b border-hairline ${hl ? "bg-primary text-primary-foreground" : "hover:bg-surface-2"}`}>
-                    <td className="px-5 py-2.5"><Mono>{new Date(b.ts).toLocaleTimeString()}</Mono></td>
+                    <td className="px-5 py-2.5"><Mono>{new Intl.DateTimeFormat("en-GB", { timeStyle: "medium", timeZone: "UTC" }).format(b.ts)}</Mono></td>
                     <td className="px-5 py-2.5"><Mono>{anon(b.token)}</Mono></td>
                     <td className="px-5 py-2.5"><Mono className="font-semibold">{shortHash(b.hash)}</Mono></td>
                     <td className="px-5 py-2.5 text-xs">{b.channel}</td>

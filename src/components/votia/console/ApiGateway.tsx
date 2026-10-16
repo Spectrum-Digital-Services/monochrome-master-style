@@ -87,7 +87,7 @@ export function ApiGateway() {
                 <div className="mt-1 flex flex-wrap gap-1">{k.scopes.map((s) => <Pill key={s}>{s}</Pill>)}</div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <Mono className="text-muted-foreground">{k.calls.toLocaleString()} calls</Mono>
+                <Mono className="text-muted-foreground">{new Intl.NumberFormat("en-US").format(k.calls)} calls</Mono>
                 <button onClick={() => { navigator.clipboard?.writeText(k.key); toast("Copied"); }} className="rounded-md p-1.5 hover:bg-muted"><Copy className="h-3.5 w-3.5" /></button>
                 {!k.revoked && <button onClick={() => revokeApiKey(k.id)} className="rounded-md px-2 py-1 text-xs hover:bg-muted">Revoke</button>}
               </div>

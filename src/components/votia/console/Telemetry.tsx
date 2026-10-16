@@ -16,7 +16,7 @@ export function Telemetry() {
   const kpis = [
     { icon: Users, label: "Verified ballots cast", value: w ? stats.weightedCast.toFixed(1) : stats.voted.toString(), sub: w ? `${stats.voted} unique voters` : `${stats.weightedCast.toFixed(1)} weighted` },
     { icon: ShieldCheck, label: "Turnout & quorum", value: `${stats.turnout.toFixed(1)}%`, sub: stats.quorumMet ? "Constitutional quorum PASS" : `Below ${QUORUM}% quorum`, badge: stats.quorumMet },
-    { icon: KeyRound, label: "Active API nodes", value: apiKeys.filter((k) => !k.revoked).length.toString(), sub: `${apiKeys.reduce((a, k) => a + k.calls, 0).toLocaleString()} calls` },
+    { icon: KeyRound, label: "Active API nodes", value: apiKeys.filter((k) => !k.revoked).length.toString(), sub: `${new Intl.NumberFormat("en-US").format(apiKeys.reduce((a, k) => a + k.calls, 0))} calls` },
     { icon: Cpu, label: "Security posture", value: `${securityOn}/${modules.length}`, sub: certified ? "Results sealed" : "Modules armed" },
   ];
 
