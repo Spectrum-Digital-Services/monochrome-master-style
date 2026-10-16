@@ -121,12 +121,12 @@ export function Ring({ value, marker, size = 160 }: { value: number; marker?: nu
 export function QrGlyph({ seed, size = 21 }: { seed: string; size?: number }) {
   const cells: boolean[] = [];
   for (let i = 0; i < size * size; i++) {
-    const ch = parseInt(seed[(i * 7) % seed.length], 16);
+    const ch = parseInt(seed[(i * 7) % seed.length] ?? "0", 16);
     cells.push(((ch >> (i % 4)) & 1) === 1);
   }
   const finder = (x: number, y: number) => {
     const inBox = (ox: number, oy: number) => x >= ox && x < ox + 7 && y >= oy && y < oy + 7;
-    for (const [ox, oy] of [[0, 0], [size - 7, 0], [0, size - 7]]) {
+    for (const [ox, oy] of [[0, 0], [size - 7, 0], [0, size - 7]] as const) {
       if (inBox(ox, oy)) {
         const dx = x - ox, dy = y - oy;
         return dx === 0 || dy === 0 || dx === 6 || dy === 6 || (dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4) ? 1 : 0;

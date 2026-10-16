@@ -137,7 +137,7 @@ export function randomSelections(contests: Contest[], r: () => number): Record<s
       sel[c.id] = x < 0.68 ? "approve" : x < 0.92 ? "reject" : ABSTAIN;
     } else {
       const x = r();
-      sel[c.id] = x < 0.06 ? ABSTAIN : ids[Math.floor(Math.pow(r(), 1.3) * ids.length)];
+      sel[c.id] = x < 0.06 ? ABSTAIN : ids[Math.floor(Math.pow(r(), 1.3) * ids.length)] ?? ABSTAIN;
     }
   }
   return sel;
@@ -194,19 +194,22 @@ export function runoff(contest: Contest, ballots: Ballot[], weighted: boolean): 
       const pick = s.find((id) => active.includes(id));
       if (!pick) continue;
       const w = weighted ? b.weight : 1;
-      counts[pick] += w;
+      counts[pick] = (counts[pick] ?? 0) + w;
       total += w;
     }
-    const sorted = [...active].sort((a, b) => counts[b] - counts[a]);
+    const sorted = [...active].sort((a, b) => (counts[b] ?? 0) - (counts[a] ?? 0));
+    const leader = sorted[0];
+    const loser = sorted[sorted.length - 1];
     if (total === 0) {
       rounds.push({ round, counts });
       break;
     }
-    if (counts[sorted[0]] / total > 0.5 || active.length === 1) {
-      rounds.push({ round, counts, winner: sorted[0] });
+    if (!leader) break;
+    if ((counts[leader] ?? 0) / total > 0.5 || active.length === 1) {
+      rounds.push({ round, counts, winner: leader });
       break;
     }
-    const loser = sorted[sorted.length - 1];
+    if (!loser) break;
     rounds.push({ round, counts, eliminated: loser });
     active = active.filter((id) => id !== loser);
   }
@@ -295,7 +298,7 @@ export function ElectionProvider({ children }: { children: ReactNode }) {
     { id: "escrow", name: "Multi-Party Board Key Escrow", version: "3-of-5", description: "Results are sealed only after 3 of 5 commissioners co-sign.", enabled: true },
     { id: "proxy", name: "Delegated Liquid Proxy Voting", version: "v1.2", description: "Members may delegate their ballot to a registered proxy.", enabled: false },
   ]);
-  const [activeToken, setActiveToken] = useState<string>(() => seedVoters()[0].token);
+  const [activeToken, setActiveToken] = useState<string>(() => seedVoters()[0]?.token ?? "");
   const [workspace, setWorkspace] = useState<Workspace>("dual");
   const [consoleModule, setConsoleModule] = useState<ConsoleModule>("telemetry");
   const [highlightHash, setHighlightHash] = useState<string | null>(null);
@@ -338,8 +341,10 @@ export function ElectionProvider({ children }: { children: ReactNode }) {
         return;
       }
       const v = pool[Math.floor(r() * pool.length)];
+      if (!v) return;
       const channels: Channel[] = ["iOS Passkey", "Mobile Web", "API Sync"];
-      const b = makeBallot(v, randomSelections(contestsRef.current, r), channels[Math.floor(r() * 3)], Date.now());
+      const channel = channels[Math.floor(r() * 3)] ?? "Mobile Web";
+      const b = makeBallot(v, randomSelections(contestsRef.current, r), channel, Date.now());
       setBallots((bs) => [...bs, b]);
       setVoters((vs) => vs.map((x) => (x.token === v.token ? { ...x, status: "Voted" } : x)));
     }, 2500);
@@ -440,7 +445,7 @@ export function ElectionProvider({ children }: { children: ReactNode }) {
       setTrustees((ts) =>
         ts.map((t, i) => (i === index && !t.signed ? { ...t, signed: true, signature: hashString(`trustee-${i}-${Date.now()}`, 40) } : t)),
       ),
-    resetCeremony: () => setTrustees((ts) => ts.map((t) => ({ ...t, signed: false, signature: undefined }))),
+    resetCeremony: () => setTrustees((ts) => ts.map(({ signature: _signature, ...t }) => ({ ...t, signed: false }))),
     stats,
   };
 

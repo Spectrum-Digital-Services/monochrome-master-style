@@ -36,7 +36,7 @@ export function VoterApp() {
   const { voters, activeToken, setActiveToken, contests } = useElection();
   const [tab, setTab] = useState<Tab>("ballot");
   const [picker, setPicker] = useState(false);
-  const voter = voters.find((v) => v.token === activeToken) ?? voters[0];
+  const voter = voters.find((v) => v.token === activeToken) ?? voters[0]!;
 
   return (
     <div className="relative flex h-full flex-col">
@@ -170,7 +170,7 @@ function BallotTab({ onCast }: { onCast: () => void }) {
     const out: Record<string, Selection> = {};
     for (const c of contests) {
       const s = sel[c.id];
-      out[c.id] = s === "__writein" ? `${WRITEIN_PREFIX}${writeIn[c.id] || "Unnamed"}` : s;
+      out[c.id] = s === undefined ? ABSTAIN : s === "__writein" ? `${WRITEIN_PREFIX}${writeIn[c.id] || "Unnamed"}` : s;
     }
     return out;
   };
@@ -235,7 +235,7 @@ function BallotTab({ onCast }: { onCast: () => void }) {
                   return (
                     <div key={c.id} className="px-4 py-3">
                       <p className="text-[11px] text-muted-foreground">{c.title}</p>
-                      <p className="text-sm font-medium">{Array.isArray(s) ? s.map((id, i) => (c.type === "ranked" ? `${i + 1}. ` : "") + candidateName(c, id)).join("  ·  ") : candidateName(c, s)}</p>
+                      <p className="text-sm font-medium">{Array.isArray(s) ? s.map((id, i) => (c.type === "ranked" ? `${i + 1}. ` : "") + candidateName(c, id)).join("  ·  ") : candidateName(c, s ?? ABSTAIN)}</p>
                     </div>
                   );
                 })}
