@@ -53,6 +53,18 @@ export function hashString(input: string, len = 64) {
   return out.slice(0, len);
 }
 export const shortHash = (h: string) => `0x${h.slice(0, 4)}…${h.slice(-4)}`;
+
+// Keep server and browser markup identical by formatting seeded timestamps without
+// relying on each runtime's ICU locale data or timezone defaults.
+export function formatUtcTimestamp(ts: number, includeDate = true) {
+  const date = new Date(ts);
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  const time = `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())} UTC`;
+  if (!includeDate) return time;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${pad(date.getUTCDate())} ${months[date.getUTCMonth()]} ${date.getUTCFullYear()}, ${time}`;
+}
+
 function rng(seed: number) {
   let s = seed;
   return () => {

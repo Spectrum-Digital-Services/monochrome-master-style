@@ -7,6 +7,7 @@ import {
   QUORUM,
   WRITEIN_PREFIX,
   candidateName,
+  formatUtcTimestamp,
   shortHash,
   tallyContest,
   useElection,
@@ -16,21 +17,6 @@ import {
 import { Bar, Mono, Pill, QrGlyph, Ring } from "./primitives";
 
 type Tab = "ballot" | "turnout" | "receipt" | "pass";
-
-export function PhoneFrame({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="relative mx-auto h-[780px] w-[372px] shrink-0 overflow-hidden rounded-[52px] bg-background shadow-device">
-      <div className="absolute left-1/2 top-2.5 z-40 h-[30px] w-[110px] -translate-x-1/2 rounded-full bg-ink" />
-      <div className="flex items-center justify-between px-8 pt-4 text-[13px] font-semibold">
-        <span>9:41</span>
-        <span className="flex items-center gap-1">
-          <span className="h-2.5 w-4 rounded-sm border border-foreground" />
-        </span>
-      </div>
-      <div className="absolute inset-x-0 bottom-0 top-11">{children}</div>
-    </div>
-  );
-}
 
 export function VoterApp() {
   const { voters, activeToken, setActiveToken, contests } = useElection();
@@ -436,7 +422,7 @@ function ReceiptTab() {
       </div>
       <div className="divide-y divide-hairline rounded-2xl bg-surface text-sm">
         {[
-          ["Timestamp", new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(b.ts)],
+          ["Timestamp", formatUtcTimestamp(b.ts)],
           ["Channel", b.channel],
           ["Weight", `${b.weight.toFixed(1)}x`],
           ["Board counter-signature", `ecdsa:${b.signature.slice(0, 14)}…`],
