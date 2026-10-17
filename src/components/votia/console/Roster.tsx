@@ -105,11 +105,11 @@ export function Roster() {
             </label>
             <button
               onClick={() => {
-                const fresh = mintVoters(Math.max(1, Math.min(50, mint.count)), mint.dept, mint.weight);
+                const fresh = mintVoters(Math.max(1, Math.min(50, mint.count)), mint.dept ?? DEPARTMENTS[0] ?? "Operations", mint.weight);
                 setOpen(false);
                 toast.success(`${fresh.length} keys dispatched`, {
                   description: fresh.map((f) => f.token).slice(0, 4).join(", "),
-                  action: { label: "Load first", onClick: () => { setActiveToken(fresh[0].token); if (workspace === "console") setWorkspace("dual"); } },
+                  action: { label: "Load first", onClick: () => { const first = fresh[0]; if (first) setActiveToken(first.token); if (workspace === "console") setWorkspace("dual"); } },
                 });
               }}
               className="w-full rounded-lg bg-primary py-2.5 font-medium text-primary-foreground"

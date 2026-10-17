@@ -16,7 +16,7 @@ export function Telemetry() {
   const kpis = [
     { icon: Users, label: "Verified ballots cast", value: w ? stats.weightedCast.toFixed(1) : stats.voted.toString(), sub: w ? `${stats.voted} unique voters` : `${stats.weightedCast.toFixed(1)} weighted` },
     { icon: ShieldCheck, label: "Turnout & quorum", value: `${stats.turnout.toFixed(1)}%`, sub: stats.quorumMet ? "Constitutional quorum PASS" : `Below ${QUORUM}% quorum`, badge: stats.quorumMet },
-    { icon: KeyRound, label: "Active API nodes", value: apiKeys.filter((k) => !k.revoked).length.toString(), sub: `${apiKeys.reduce((a, k) => a + k.calls, 0).toLocaleString()} calls` },
+    { icon: KeyRound, label: "Active API nodes", value: apiKeys.filter((k) => !k.revoked).length.toString(), sub: `${new Intl.NumberFormat("en-US").format(apiKeys.reduce((a, k) => a + k.calls, 0))} calls` },
     { icon: Cpu, label: "Security posture", value: `${securityOn}/${modules.length}`, sub: certified ? "Results sealed" : "Modules armed" },
   ];
 
@@ -102,11 +102,11 @@ function TallyBody({ contestId, weighted }: { contestId: string; weighted: boole
   const { contests, ballots } = useElection();
   const contest = contests.find((c) => c.id === contestId)!;
   const t = tallyContest(contest, ballots, weighted);
-  const rows = [...contest.candidates.map((c) => ({ id: c.id, n: t.counts[c.id] ?? 0 })), { id: ABSTAIN, n: t.counts[ABSTAIN] }];
+  const rows = [...contest.candidates.map((c) => ({ id: c.id, n: t.counts[c.id] ?? 0 })), { id: ABSTAIN, n: t.counts[ABSTAIN] ?? 0 }];
   if (t.writeIns) rows.push({ id: "__writein:(all)", n: t.writeIns });
   const max = Math.max(...rows.map((r) => r.n), 1);
-  const decisive = contest.type === "resolution" ? (t.counts.approve ?? 0) + (t.counts.reject ?? 0) : 0;
-  const approvePct = decisive ? ((t.counts.approve ?? 0) / decisive) * 100 : 0;
+  const decisive = contest.type === "resolution" ? (t.counts["approve"] ?? 0) + (t.counts["reject"] ?? 0) : 0;
+  const approvePct = decisive ? ((t.counts["approve"] ?? 0) / decisive) * 100 : 0;
   return (
     <div className="space-y-3.5 p-5">
       {rows.sort((a, b) => b.n - a.n).map((r, i) => (

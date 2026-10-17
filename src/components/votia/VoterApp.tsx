@@ -7,6 +7,7 @@ import {
   QUORUM,
   WRITEIN_PREFIX,
   candidateName,
+  formatUtcTimestamp,
   shortHash,
   tallyContest,
   useElection,
@@ -17,26 +18,11 @@ import { Bar, Mono, Pill, QrGlyph, Ring } from "./primitives";
 
 type Tab = "ballot" | "turnout" | "receipt" | "pass";
 
-export function PhoneFrame({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="relative mx-auto h-[780px] w-[372px] shrink-0 overflow-hidden rounded-[52px] bg-background shadow-device">
-      <div className="absolute left-1/2 top-2.5 z-40 h-[30px] w-[110px] -translate-x-1/2 rounded-full bg-ink" />
-      <div className="flex items-center justify-between px-8 pt-4 text-[13px] font-semibold">
-        <span>9:41</span>
-        <span className="flex items-center gap-1">
-          <span className="h-2.5 w-4 rounded-sm border border-foreground" />
-        </span>
-      </div>
-      <div className="absolute inset-x-0 bottom-0 top-11">{children}</div>
-    </div>
-  );
-}
-
 export function VoterApp() {
   const { voters, activeToken, setActiveToken, contests } = useElection();
   const [tab, setTab] = useState<Tab>("ballot");
   const [picker, setPicker] = useState(false);
-  const voter = voters.find((v) => v.token === activeToken) ?? voters[0];
+  const voter = voters.find((v) => v.token === activeToken) ?? voters[0]!;
 
   return (
     <div className="relative flex h-full flex-col">
@@ -170,7 +156,7 @@ function BallotTab({ onCast }: { onCast: () => void }) {
     const out: Record<string, Selection> = {};
     for (const c of contests) {
       const s = sel[c.id];
-      out[c.id] = s === "__writein" ? `${WRITEIN_PREFIX}${writeIn[c.id] || "Unnamed"}` : s;
+      out[c.id] = s === undefined ? ABSTAIN : s === "__writein" ? `${WRITEIN_PREFIX}${writeIn[c.id] || "Unnamed"}` : s;
     }
     return out;
   };
@@ -235,7 +221,7 @@ function BallotTab({ onCast }: { onCast: () => void }) {
                   return (
                     <div key={c.id} className="px-4 py-3">
                       <p className="text-[11px] text-muted-foreground">{c.title}</p>
-                      <p className="text-sm font-medium">{Array.isArray(s) ? s.map((id, i) => (c.type === "ranked" ? `${i + 1}. ` : "") + candidateName(c, id)).join("  ·  ") : candidateName(c, s)}</p>
+                      <p className="text-sm font-medium">{Array.isArray(s) ? s.map((id, i) => (c.type === "ranked" ? `${i + 1}. ` : "") + candidateName(c, id)).join("  ·  ") : candidateName(c, s ?? ABSTAIN)}</p>
                     </div>
                   );
                 })}
@@ -436,7 +422,7 @@ function ReceiptTab() {
       </div>
       <div className="divide-y divide-hairline rounded-2xl bg-surface text-sm">
         {[
-          ["Timestamp", new Date(b.ts).toLocaleString()],
+          ["Timestamp", formatUtcTimestamp(b.ts)],
           ["Channel", b.channel],
           ["Weight", `${b.weight.toFixed(1)}x`],
           ["Board counter-signature", `ecdsa:${b.signature.slice(0, 14)}…`],

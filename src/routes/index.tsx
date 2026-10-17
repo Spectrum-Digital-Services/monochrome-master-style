@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ElectionProvider, QUORUM, useElection, type Workspace } from "@/lib/election-store";
 import { Dot, Pill, Segmented } from "@/components/votia/primitives";
-import { PhoneFrame, VoterApp } from "@/components/votia/VoterApp";
+import { VoterApp } from "@/components/votia/VoterApp";
 import { Console } from "@/components/votia/Console";
 
 export const Route = createFileRoute("/")({
@@ -49,15 +49,15 @@ function App() {
       </header>
       <div className="min-h-0 flex-1 p-5">
         {workspace === "voter" && (
-          <div className="flex h-full items-center justify-center overflow-auto">
-            <PhoneFrame><VoterApp /></PhoneFrame>
+          <div className="mx-auto h-full max-w-xl overflow-hidden rounded-2xl border border-hairline bg-background shadow-card">
+            <VoterApp />
           </div>
         )}
         {workspace === "console" && <Console />}
         {workspace === "dual" && (
           <div className="flex h-full gap-6">
-            <div className="hidden items-center overflow-auto py-3 pl-3 lg:flex">
-              <PhoneFrame><VoterApp /></PhoneFrame>
+            <div className="min-w-0 flex-1 overflow-hidden rounded-2xl border border-hairline bg-background">
+              <VoterApp />
             </div>
             <div className="min-w-0 flex-1"><Console /></div>
           </div>

@@ -53,6 +53,18 @@ export function hashString(input: string, len = 64) {
   return out.slice(0, len);
 }
 export const shortHash = (h: string) => `0x${h.slice(0, 4)}…${h.slice(-4)}`;
+
+// Keep server and browser markup identical by formatting seeded timestamps without
+// relying on each runtime's ICU locale data or timezone defaults.
+export function formatUtcTimestamp(ts: number, includeDate = true) {
+  const date = new Date(ts);
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  const time = `${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())} UTC`;
+  if (!includeDate) return time;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${pad(date.getUTCDate())} ${months[date.getUTCMonth()]} ${date.getUTCFullYear()}, ${time}`;
+}
+
 function rng(seed: number) {
   let s = seed;
   return () => {
@@ -137,7 +149,7 @@ export function randomSelections(contests: Contest[], r: () => number): Record<s
       sel[c.id] = x < 0.68 ? "approve" : x < 0.92 ? "reject" : ABSTAIN;
     } else {
       const x = r();
-      sel[c.id] = x < 0.06 ? ABSTAIN : ids[Math.floor(Math.pow(r(), 1.3) * ids.length)];
+      sel[c.id] = x < 0.06 ? ABSTAIN : ids[Math.floor(Math.pow(r(), 1.3) * ids.length)] ?? ABSTAIN;
     }
   }
   return sel;
@@ -194,19 +206,22 @@ export function runoff(contest: Contest, ballots: Ballot[], weighted: boolean): 
       const pick = s.find((id) => active.includes(id));
       if (!pick) continue;
       const w = weighted ? b.weight : 1;
-      counts[pick] += w;
+      counts[pick] = (counts[pick] ?? 0) + w;
       total += w;
     }
-    const sorted = [...active].sort((a, b) => counts[b] - counts[a]);
+    const sorted = [...active].sort((a, b) => (counts[b] ?? 0) - (counts[a] ?? 0));
+    const leader = sorted[0];
+    const loser = sorted[sorted.length - 1];
     if (total === 0) {
       rounds.push({ round, counts });
       break;
     }
-    if (counts[sorted[0]] / total > 0.5 || active.length === 1) {
-      rounds.push({ round, counts, winner: sorted[0] });
+    if (!leader) break;
+    if ((counts[leader] ?? 0) / total > 0.5 || active.length === 1) {
+      rounds.push({ round, counts, winner: leader });
       break;
     }
-    const loser = sorted[sorted.length - 1];
+    if (!loser) break;
     rounds.push({ round, counts, eliminated: loser });
     active = active.filter((id) => id !== loser);
   }
@@ -262,6 +277,7 @@ type Store = {
 const Ctx = createContext<Store | null>(null);
 
 export function ElectionProvider({ children }: { children: ReactNode }) {
+  const [hydrated, setHydrated] = useState(false);
   const [contests, setContests] = useState<Contest[]>(seedContests);
   const [voters, setVoters] = useState<Voter[]>(seedVoters);
   const [ballots, setBallots] = useState<Ballot[]>(() => {
@@ -295,12 +311,16 @@ export function ElectionProvider({ children }: { children: ReactNode }) {
     { id: "escrow", name: "Multi-Party Board Key Escrow", version: "3-of-5", description: "Results are sealed only after 3 of 5 commissioners co-sign.", enabled: true },
     { id: "proxy", name: "Delegated Liquid Proxy Voting", version: "v1.2", description: "Members may delegate their ballot to a registered proxy.", enabled: false },
   ]);
-  const [activeToken, setActiveToken] = useState<string>(() => seedVoters()[0].token);
+  const [activeToken, setActiveToken] = useState<string>(() => seedVoters()[0]?.token ?? "");
   const [workspace, setWorkspace] = useState<Workspace>("dual");
   const [consoleModule, setConsoleModule] = useState<ConsoleModule>("telemetry");
   const [highlightHash, setHighlightHash] = useState<string | null>(null);
   const [simulating, setSimulating] = useState(false);
   const [publicStandings, setPublicStandings] = useState(true);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   // Mark seeded ballots' voters as voted
   const seeded = useRef(false);
@@ -338,8 +358,10 @@ export function ElectionProvider({ children }: { children: ReactNode }) {
         return;
       }
       const v = pool[Math.floor(r() * pool.length)];
+      if (!v) return;
       const channels: Channel[] = ["iOS Passkey", "Mobile Web", "API Sync"];
-      const b = makeBallot(v, randomSelections(contestsRef.current, r), channels[Math.floor(r() * 3)], Date.now());
+      const channel = channels[Math.floor(r() * 3)] ?? "Mobile Web";
+      const b = makeBallot(v, randomSelections(contestsRef.current, r), channel, Date.now());
       setBallots((bs) => [...bs, b]);
       setVoters((vs) => vs.map((x) => (x.token === v.token ? { ...x, status: "Voted" } : x)));
     }, 2500);
@@ -440,9 +462,11 @@ export function ElectionProvider({ children }: { children: ReactNode }) {
       setTrustees((ts) =>
         ts.map((t, i) => (i === index && !t.signed ? { ...t, signed: true, signature: hashString(`trustee-${i}-${Date.now()}`, 40) } : t)),
       ),
-    resetCeremony: () => setTrustees((ts) => ts.map((t) => ({ ...t, signed: false, signature: undefined }))),
+    resetCeremony: () => setTrustees((ts) => ts.map(({ signature: _signature, ...t }) => ({ ...t, signed: false }))),
     stats,
   };
+
+  if (!hydrated) return null;
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
